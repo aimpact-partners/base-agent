@@ -2,7 +2,7 @@
   "name": "@aimpact/base-agent",
   "version": "1.0.0",
   "title": "Base Agents package",
-  "description": "",
+  "description": "Package to handle langchain base agent",
   "license": "ISC",
   "layout": "main-layout",
   "template": "template/template.json",

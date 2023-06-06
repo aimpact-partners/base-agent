@@ -23,11 +23,11 @@ export /*bundle*/ class AgentAPI {
         description: "consult all the information filtering by subject and type of documents",
         func: () => this.#api.query(input),
       }),
-      new DynamicTool({
-        name: "BAR",
-        description: "call this to get the value of bar. input should be an empty string.",
-        func: () => "baz1",
-      }),
+      //   new DynamicTool({
+      //     name: "BAR",
+      //     description: "call this to get the value of bar. input should be an empty string.",
+      //     func: () => "baz1",
+      //   }),
     ];
 
     const executor = await initializeAgentExecutorWithOptions(tools, model, {
@@ -35,16 +35,11 @@ export /*bundle*/ class AgentAPI {
     });
     console.log("Loaded agent.");
 
-    input = input ?? `What is the value of foo?`;
-
-    console.log(`Executing with input "${input}"...`);
-
+    // input = input ?? `What is the value of foo?`;
+    // console.log(`Executing with input "${input}"...`);
     const result = await executor.call({ input });
-
-    console.log(`Got output ${result.output}`);
-    //-
-
-    console.log(`Got intermediate steps ${JSON.stringify(result.intermediateSteps, null, 2)}`);
+    // console.log(`Got output ${result.output}`);
+    // console.log(`Got intermediate steps ${JSON.stringify(result.intermediateSteps, null, 2)}`);
 
     return { status: true, data: result.output };
   }
