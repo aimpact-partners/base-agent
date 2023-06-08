@@ -46,47 +46,54 @@ export /*bundle*/ class EmbeddingsManager {
   }
 
   async createIndex(name: string, embedding) {
-    const docs = this.#chain.documents.items;
+    // const docs = this.#chain.documents.items;
     //create
-    console.log(2.1, `//create index`, name);
-
+    // console.log(2.1, `//create index`, name);
     // TODO Este codigo puede tardar aproximadamente 1minuto en mostrar el indice luego de generado
-    const index = await this.#client.createIndex({
-      createRequest: {
-        name: name,
-        dimension: process.env.PINECODE_INDEX_DIMENSION,
-        metric: process.env.PINECODE_INDEX_METRIC,
-      },
-    });
-    console.log(2.2, `// index created:`, index);
-
-    await PineconeStore.fromDocuments(docs, embedding, { index });
+    // const index = await this.#client.createIndex({
+    //   createRequest: {
+    //     name: name,
+    //     dimension: process.env.PINECODE_INDEX_DIMENSION,
+    //     metric: process.env.PINECODE_INDEX_METRIC,
+    //   },
+    // });
+    // console.log(2.2, `// index created:`, index);
+    // await PineconeStore.fromDocuments(docs, embedding, { index });
   }
 
   async update() {
     await this.init();
     const pineconeIndex = this.#client.Index(process.env.PINECONE_INDEX_NAME);
+
+    console.log("pinecode update", this.#chain.documents.items);
+    console.log(1, this.#chain.documents.items);
+
     await PineconeStore.fromDocuments(this.#chain.documents.items, this.#embedding, { pineconeIndex });
   }
 
-  async search(question: string, knowledge: string) {
+  async search(question: string, filters) {
     if (!this.#vectorStore) {
       await this.init();
       await this.vector();
     }
 
-    /* Search the vector DB independently with meta filters */
-    const results = await this.#vectorStore.similaritySearch(question, 1, {});
+    console.log("search filters", filters);
+    const results = await this.#vectorStore.similaritySearch(question, 1, filters);
     return { status: true, data: results };
   }
 
-  async query(question: string, knowledge: string) {
+  async query(question: string, filters) {
     if (!this.#vectorStore) {
       await this.init();
       await this.vector();
     }
 
-    const chain = VectorDBQAChain.fromLLM(this.#model, this.#vectorStore, { k: 1, returnSourceDocuments: true });
+    console.log("fromLLM ", filters);
+    const chain = VectorDBQAChain.fromLLM(this.#model, this.#vectorStore, {
+      k: 1,
+      returnSourceDocuments: true,
+      metadataFilter: filters,
+    });
     const response = await chain.call({ query: question });
     return { status: true, data: response.text };
   }
