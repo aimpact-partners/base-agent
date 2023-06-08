@@ -1,34 +1,24 @@
 import {AgentAPI} from '@aimpact/base-agent/agent';
 
-export class Agent {
-	#app;
-	#agent;
-
-	constructor(app) {
-		this.#app = app;
-		this.#agent = new AgentAPI();
-		this.#app.post('/agent', this.execute.bind(this));
+const agent = new AgentAPI();
+export const execute = async (req, res) => {
+	const {query} = req.body;
+	if (!query) {
+		return res.status(400).send({status: false, error: 'No data to process'});
 	}
 
-	async execute(req, res) {
-		const {query} = req.body;
-		if (!query) {
-			return res.status(400).send({status: false, error: 'No data to process'});
+	try {
+		const response = await agent.init(query);
+		if (!response.status) {
+			res.json({
+				status: false,
+				error: `Error processing: ${response.error}`,
+			});
+			return;
 		}
-
-		try {
-			const response = await this.#agent.init(query);
-			if (!response.status) {
-				res.json({
-					status: false,
-					error: `Error processing: ${response.error}`,
-				});
-				return;
-			}
-			return res.json(response);
-		} catch (error) {
-			console.error(error);
-			res.status(500).send('Error processing request');
-		}
+		return res.json(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send('Error processing request');
 	}
-}
+};
