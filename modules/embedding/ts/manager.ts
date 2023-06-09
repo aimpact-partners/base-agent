@@ -50,7 +50,6 @@ export /*bundle*/ class EmbeddingsManager {
 	async query(question: string, filters) {
 		if (!this.#vectorStore) await this.setVector();
 
-		console.log('fromLLM ', filters);
 		const chain = VectorDBQAChain.fromLLM(this.#model, this.#vectorStore, {
 			k: 1,
 			returnSourceDocuments: true,

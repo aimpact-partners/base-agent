@@ -15,7 +15,8 @@ export /*bundle*/ class AgentAPI {
 		const tools = [
 			new DynamicTool({
 				name: 'embeddings',
-				description: 'consult the information filtering by subject and type of documents',
+				description:
+					'consult the information filtering by subject and type of documents, if you do not have the answer you can consult the OpenAi API',
 				func: () => this.#api.query(input),
 			}),
 		];
@@ -25,6 +26,6 @@ export /*bundle*/ class AgentAPI {
 		});
 
 		const result = await executor.call({input});
-		return {status: true, data: result.output};
+		return {status: true, data: {output: result.output}};
 	}
 }
