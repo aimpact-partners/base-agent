@@ -12,20 +12,26 @@ export /*bundle*/ class AgentAPI {
 		const model = new ChatOpenAI({openAIApiKey: process.env.OPEN_AI_KEY, temperature});
 		// const tools = [serpApi, this.#api, new Calculator()];
 
-		const tools = [
-			new DynamicTool({
-				name: 'embeddings',
-				description:
-					'consult the information filtering by subject and type of documents, if you do not have the answer you can consult the OpenAi API',
-				func: () => this.#api.query(input),
-			}),
-		];
+		try {
+			const tools = [
+				new DynamicTool({
+					name: 'documents embeddings',
+					description:
+						'This tool retrieves information from stored documents,' +
+						'if you do not have the answer you can consult the OpenAi API',
+					func: () => this.#api.query(input),
+				}),
+			];
 
-		const executor = await initializeAgentExecutorWithOptions(tools, model, {
-			agentType: 'zero-shot-react-description',
-		});
+			const executor = await initializeAgentExecutorWithOptions(tools, model, {
+				agentType: 'zero-shot-react-description',
+			});
 
-		const result = await executor.call({input});
-		return {status: true, data: {output: result.output}};
+			const result = await executor.call({input});
+			return {status: true, data: {output: result.output}};
+		} catch (e) {
+			console.log('en el catch del agent', e);
+			return {status: false, error: e.message};
+		}
 	}
 }
