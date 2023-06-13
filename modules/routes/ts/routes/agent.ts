@@ -1,7 +1,7 @@
 import {AgentAPI} from '@aimpact/base-agent/agent';
 
 const agent = new AgentAPI();
-export const execute = async (req, res) => {
+export /*bundle*/ const execute = async (req, res) => {
 	const {text} = req.body;
 	if (!text) {
 		return res.status(400).send({status: false, error: 'No data to process'});

@@ -10,6 +10,10 @@ export /*bundle*/ class EmbeddingAPI {
 		this.#embeddings = new EmbeddingsManager();
 	}
 
+	async chain() {
+		return this.#embeddings.llm();
+	}
+
 	async query(question: string, filters?) {
 		return this.#embeddings.query(question, filters);
 	}

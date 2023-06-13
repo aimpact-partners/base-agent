@@ -29,10 +29,10 @@ export /*bundle*/ class EmbeddingsManager {
 			environment: process.env.PINECONE_ENVIRONMENT,
 		});
 
-		const indexes = await this.#client.listIndexes();
-		if (!indexes.length && !indexes.includes(process.env.PINECONE_INDEX_NAME)) {
-			return {status: false, error: `Embedding index "${process.env.PINECONE_INDEX_NAME}" not found`};
-		}
+		// const indexes = await this.#client.listIndexes();
+		// if (!indexes.length && !indexes.includes(process.env.PINECONE_INDEX_NAME)) {
+		// 	return {status: false, error: `Embedding index "${process.env.PINECONE_INDEX_NAME}" not found`};
+		// }
 
 		const pineconeIndex = this.#client.Index(process.env.PINECONE_INDEX_NAME);
 		this.#vectorStore = await PineconeStore.fromExistingIndex(this.#embedding, {pineconeIndex});
@@ -47,15 +47,24 @@ export /*bundle*/ class EmbeddingsManager {
 		return {status: true, data: results};
 	}
 
-	async query(question: string, filters) {
+	async query(question: string) {
 		if (!this.#vectorStore) await this.setVector();
 
 		const chain = VectorDBQAChain.fromLLM(this.#model, this.#vectorStore, {
 			k: 1,
-			returnSourceDocuments: true,
-			metadataFilter: filters,
+			returnSourceDocuments: false,
 		});
+
 		const response = await chain.call({query: question});
 		return {status: true, data: response.text};
+	}
+
+	async llm() {
+		if (!this.#vectorStore) await this.setVector();
+
+		return VectorDBQAChain.fromLLM(this.#model, this.#vectorStore, {
+			k: 1,
+			returnSourceDocuments: false,
+		});
 	}
 }
