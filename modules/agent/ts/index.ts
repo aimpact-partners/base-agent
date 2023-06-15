@@ -1,43 +1,44 @@
 // import {Calculator} from 'langchain/tools/calculator';
-import {ChainTool} from 'langchain/tools';
-import {ChatOpenAI} from 'langchain/chat_models/openai';
-import {EmbeddingAPI} from '@aimpact/base-agent/embedding';
-import {initializeAgentExecutorWithOptions} from 'langchain/agents';
+import { ChainTool } from 'langchain/tools';
+import { ChatOpenAI } from 'langchain/chat_models/openai';
+import { EmbeddingAPI } from '@aimpact/base-agent/embedding';
+import { initializeAgentExecutorWithOptions } from 'langchain/agents';
 
 export /*bundle*/ class AgentAPI {
-	#api = new EmbeddingAPI();
+    #embedding = new EmbeddingAPI();
 
-	async init(input: string, temperature: number = 0, language = 'es') {
-		const model = new ChatOpenAI({
-			openAIApiKey: process.env.OPEN_AI_KEY,
-			temperature,
-			language: 'es',
-		});
+    async init(input: string, metadata: {}, temperature: number = 0, language = 'es') {
+        const model = new ChatOpenAI({
+            openAIApiKey: process.env.OPEN_AI_KEY,
+            temperature,
+            language,
+        });
 
-		const chain = await this.#api.chain();
+        console.log('agent init', input, metadata, temperature, language);
+        const chain = await this.#embedding.chain(metadata);
 
-		const tools = [
-			new ChainTool({
-				name: 'documents embeddings',
-				description: 'This tool retrieves information from stored documents,',
-				chain: chain,
-				returnDirect: true,
-			}),
-		];
+        const tools = [
+            new ChainTool({
+                name: 'documents embeddings',
+                description: 'This tool retrieves information from stored documents,',
+                chain: chain,
+                returnDirect: true,
+            }),
+        ];
 
-		try {
-			const executor = await initializeAgentExecutorWithOptions(tools, model, {
-				// agentType: 'zero-shot-react-description',
-				// agentType: 'chat-zero-shot-react-description',
-				agentType: 'chat-conversational-react-description',
-				maxIterations: 3,
-			});
+        try {
+            const executor = await initializeAgentExecutorWithOptions(tools, model, {
+                // agentType: 'zero-shot-react-description',
+                // agentType: 'chat-zero-shot-react-description',
+                agentType: 'chat-conversational-react-description',
+                maxIterations: 3,
+            });
 
-			const result = await executor.call({input});
-			return {status: true, data: {output: result.output}};
-		} catch (e) {
-			console.log('en el catch del agent', e);
-			return {status: false, error: e.message};
-		}
-	}
+            const result = await executor.call({ input });
+            return { status: true, data: { output: result.output } };
+        } catch (e) {
+            console.log('en el catch del agent', e);
+            return { status: false, error: e.message };
+        }
+    }
 }
