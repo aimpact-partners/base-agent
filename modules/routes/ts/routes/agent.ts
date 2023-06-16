@@ -7,8 +7,6 @@ export /*bundle*/ const execute = async (req, res) => {
         return res.status(400).send({ status: false, error: 'No data to process' });
     }
 
-    console.log('agent http ', text, path);
-
     try {
         const response = await agent.init(text, path);
         if (!response.status) {
