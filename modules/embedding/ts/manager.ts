@@ -62,16 +62,13 @@ export /*bundle*/ class EmbeddingsManager {
     async llm(metadata: {}) {
         if (!this.#vectorStore) await this.setVector();
 
-        console.log('agent embedding llm', {
-            k: 1,
-            returnSourceDocuments: false,
-            filter: { metadata: metadata },
-        });
+        let specs;
+        if (metadata) specs = { filter: { metadata } };
 
         return VectorDBQAChain.fromLLM(this.#model, this.#vectorStore, {
             k: 1,
             returnSourceDocuments: false,
-            filter: { metadata: metadata },
+            options: specs,
         });
     }
 }
