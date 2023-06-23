@@ -7,21 +7,22 @@ import { ChatConversationalAgent, initializeAgentExecutorWithOptions } from 'lan
 export /*bundle*/ class AgentAPI {
     #embedding = new EmbeddingAPI();
 
-    async init(input: string, metadata: {} | string, temperature: number = 0, language = 'es') {
+    async init(input: string, metadata: {} | string, temperature: number = 0.2, language = 'es') {
         const model = new ChatOpenAI({
             openAIApiKey: process.env.OPEN_AI_KEY,
             temperature,
-            language,
+            modelName: 'gpt-3.5-turbo',
         });
-        const chain = await this.#embedding.chain(metadata);
+
+        const chain = await this.#embedding.chain(model, metadata);
         const tools =
             metadata === 'default'
                 ? []
                 : [
                       new ChainTool({
-                          name: 'documents embeddings',
+                          name: 'documentos',
                           description:
-                              'This tool retrieves information from stored documents, only if metadata has been passed in the llm model filter',
+                              'Esta herramienta recupera información de documentos almacenados filtrandolos por metadata cuando se consultan en el vector, genera todas las respuesta en castellano, incluso si no tienes la respuesta',
                           chain: chain,
                           returnDirect: true,
                       }),
@@ -36,8 +37,6 @@ export /*bundle*/ class AgentAPI {
                 maxIterations: 3,
             });
             const result = await executor.call({ input });
-            // console.log('after executor', result.output);
-
             return { status: true, data: { output: result.output } };
         } catch (e) {
             console.log('en el catch del agent', e);

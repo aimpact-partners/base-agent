@@ -6,6 +6,11 @@ import { PineconeStore } from 'langchain/vectorstores/pinecone';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
+interface ISpecs {
+    pineconeIndex: any;
+    filter?: {};
+}
+
 export /*bundle*/ class EmbeddingsManager {
     #model: OpenAI;
     #embedding: OpenAIEmbeddings;
@@ -13,17 +18,17 @@ export /*bundle*/ class EmbeddingsManager {
     #client: PineconeClient;
     #map = new Map();
 
-    constructor() {
+    constructor(temperature: number, language: string) {
         this.#client = new PineconeClient();
         this.#model = new OpenAI({
             openAIApiKey: process.env.OPEN_AI_KEY,
             modelName: 'gpt-3.5-turbo',
-            temperature: 0.2,
+            temperature,
         });
         this.#embedding = new OpenAIEmbeddings({ openAIApiKey: process.env.OPEN_AI_KEY });
     }
 
-    async setVector() {
+    async setVector(metadata: {} = undefined) {
         await this.#client.init({
             apiKey: process.env.PINECONE_API_KEY,
             environment: process.env.PINECONE_ENVIRONMENT,
@@ -35,14 +40,17 @@ export /*bundle*/ class EmbeddingsManager {
         // }
 
         const pineconeIndex = this.#client.Index(process.env.PINECONE_INDEX_NAME);
-        this.#vectorStore = await PineconeStore.fromExistingIndex(this.#embedding, { pineconeIndex });
+
+        const specs: ISpecs = { pineconeIndex };
+        metadata && (specs.filter = metadata);
+        this.#vectorStore = await PineconeStore.fromExistingIndex(this.#embedding, specs);
+
         this.#map.set(pineconeIndex, this.#vectorStore);
     }
 
     async search(question: string, filters) {
         if (!this.#vectorStore) await this.setVector();
 
-        console.log('search filters', filters);
         const results = await this.#vectorStore.similaritySearch(question, 1, filters);
         return { status: true, data: results };
     }
@@ -59,16 +67,16 @@ export /*bundle*/ class EmbeddingsManager {
         return { status: true, data: response.text };
     }
 
-    async llm(metadata: {}) {
-        if (!this.#vectorStore) await this.setVector();
+    async llm(model = undefined, metadata: {} = undefined) {
+        if (!this.#vectorStore) await this.setVector(metadata);
 
         let specs;
         if (metadata) specs = { filter: { metadata } };
 
-        return VectorDBQAChain.fromLLM(this.#model, this.#vectorStore, {
+        return VectorDBQAChain.fromLLM(model ?? this.#model, this.#vectorStore, {
             k: 1,
             returnSourceDocuments: false,
-            options: specs,
+            metadataFilter: { metadata },
         });
     }
 }
