@@ -14,20 +14,20 @@ export /*bundle*/ class AgentAPI {
             modelName: 'gpt-3.5-turbo',
         });
 
-        const chain = await this.#embedding.chain(model, metadata);
-        const tools =
-            metadata === 'default'
-                ? []
-                : [
-                      new ChainTool({
-                          name: 'documentos',
-                          description:
-                              'Esta herramienta recupera información de documentos almacenados filtrandolos por metadata cuando se consultan en el vector, genera todas las respuesta en castellano, incluso si no tienes la respuesta',
-                          chain: chain,
-                          returnDirect: true,
-                      }),
-                      new Calculator(),
-                  ];
+        let tools = [];
+        if (typeof metadata === 'object') {
+            const chain = await this.#embedding.chain(model, metadata);
+            tools = [
+                new ChainTool({
+                    name: 'documentos',
+                    description:
+                        'Esta herramienta recupera información de documentos almacenados filtrandolos por metadata cuando se consultan en el vector, genera todas las respuesta en castellano, incluso si no tienes la respuesta',
+                    chain: chain,
+                    returnDirect: true,
+                }),
+                new Calculator(),
+            ];
+        }
 
         try {
             const chatAgent = ChatConversationalAgent.fromLLMAndTools(model, tools);
@@ -39,7 +39,7 @@ export /*bundle*/ class AgentAPI {
             const result = await executor.call({ input });
             return { status: true, data: { output: result.output } };
         } catch (e) {
-            console.log('en el catch del agent', e);
+            console.error('agent catch', e);
             return { status: false, error: e.message };
         }
     }

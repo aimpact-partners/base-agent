@@ -1,7 +1,5 @@
-import { OpenAI } from 'langchain/llms/openai';
 import { VectorDBQAChain } from 'langchain/chains';
 import { PineconeClient } from '@pinecone-database/pinecone';
-import { OpenAIEmbeddings } from 'langchain/embeddings/openai';
 import { PineconeStore } from 'langchain/vectorstores/pinecone';
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -12,20 +10,20 @@ interface ISpecs {
 }
 
 export /*bundle*/ class EmbeddingsManager {
-    #model: OpenAI;
-    #embedding: OpenAIEmbeddings;
-    #vectorStore: PineconeStore;
+    #parent;
     #client: PineconeClient;
+    #vectorStore: PineconeStore;
     #map = new Map();
 
-    constructor(temperature: number, language: string) {
+    constructor(parent) {
+        this.#parent = parent;
         this.#client = new PineconeClient();
-        this.#model = new OpenAI({
-            openAIApiKey: process.env.OPEN_AI_KEY,
-            modelName: 'gpt-3.5-turbo',
-            temperature,
-        });
-        this.#embedding = new OpenAIEmbeddings({ openAIApiKey: process.env.OPEN_AI_KEY });
+        // this.#model = new OpenAI({
+        //     openAIApiKey: process.env.OPEN_AI_KEY,
+        //     modelName: 'gpt-3.5-turbo',
+        //     temperature,
+        // });
+        // this.#embedding = new OpenAIEmbeddings({ openAIApiKey: process.env.OPEN_AI_KEY });
     }
 
     async setVector(metadata: {} = undefined) {
@@ -43,7 +41,7 @@ export /*bundle*/ class EmbeddingsManager {
 
         const specs: ISpecs = { pineconeIndex };
         metadata && (specs.filter = metadata);
-        this.#vectorStore = await PineconeStore.fromExistingIndex(this.#embedding, specs);
+        this.#vectorStore = await PineconeStore.fromExistingIndex(this.#parent.embedding, specs);
 
         this.#map.set(pineconeIndex, this.#vectorStore);
     }
@@ -58,7 +56,7 @@ export /*bundle*/ class EmbeddingsManager {
     async query(question: string, filters) {
         if (!this.#vectorStore) await this.setVector();
 
-        const chain = VectorDBQAChain.fromLLM(this.#model, this.#vectorStore, {
+        const chain = VectorDBQAChain.fromLLM(this.#parent.model, this.#vectorStore, {
             k: 1,
             returnSourceDocuments: false,
         });
@@ -70,13 +68,10 @@ export /*bundle*/ class EmbeddingsManager {
     async llm(model = undefined, metadata: {} = undefined) {
         if (!this.#vectorStore) await this.setVector(metadata);
 
-        let specs;
-        if (metadata) specs = { filter: { metadata } };
-
-        return VectorDBQAChain.fromLLM(model ?? this.#model, this.#vectorStore, {
+        model = model ?? this.#parent.model;
+        return VectorDBQAChain.fromLLM(model, this.#vectorStore, {
             k: 1,
             returnSourceDocuments: false,
-            metadataFilter: { metadata },
         });
     }
 }
