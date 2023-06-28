@@ -11,12 +11,12 @@ export /*bundle*/ class AgentAPI {
 
     async run(items: ChatCompletionRequestMessage[], prompt: string, filter: {}) {
         const model = this.#model;
-        const messages: ChatCompletionRequestMessage[] = [{ role: 'system', content: prompt }];
-        messages.concat(items);
+        let messages: ChatCompletionRequestMessage[] = [{ role: 'system', content: prompt }];
+        messages = messages.concat(items);
 
-        // if (filter) {
-        //     messages[messages.length - 1].text += 'filterby';
-        // }
+        // console.log(' messages: ', messages);
+        // console.log(' prompt ', prompt);
+        // console.log(' filter ', filter);
 
         const { data } = await this.#openai.createChatCompletion({ model, messages, functions });
 
@@ -29,8 +29,7 @@ export /*bundle*/ class AgentAPI {
         // console.log('RESPONSE :', response);
 
         const { function_call } = response;
-        console.log('function_call?.name ', function_call?.name);
-        console.log('==filter==', filter);
+        // console.log('function_call?.name ', function_call?.name);
 
         if (!function_call?.name) {
             return { status: true, data: { usage, output: response.content } };
