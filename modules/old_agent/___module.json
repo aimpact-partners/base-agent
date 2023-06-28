@@ -1,0 +1,8 @@
+{
+    "name": "old_agent",
+    "platforms": ["node", "backend"],
+    "ts": {
+        "path": "ts",
+        "files": ["*"]
+    }
+}

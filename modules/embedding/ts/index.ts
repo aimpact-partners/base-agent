@@ -33,7 +33,7 @@ export /*bundle*/ class EmbeddingAPI {
         return this.#manager.query(question, filters);
     }
 
-    async search(text: string, filters?) {
-        return this.#manager.search(text, filters);
+    async search(input: string, filters?) {
+        return this.#manager.search(input, filters);
     }
 }

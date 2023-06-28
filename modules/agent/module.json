@@ -1,8 +1,9 @@
 {
-	"name": "agent",
-	"platforms": ["node", "backend"],
-	"ts": {
-		"path": "ts",
-		"files": ["*"]
-	}
+  "name": "agent",
+  "ts": {
+    "path": "ts",
+    "files": [
+      "*"
+    ]
+  }
 }

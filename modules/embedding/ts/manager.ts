@@ -46,11 +46,12 @@ export /*bundle*/ class EmbeddingsManager {
         this.#map.set(pineconeIndex, this.#vectorStore);
     }
 
-    async search(question: string, filters) {
+    async search(input: string, filters) {
         if (!this.#vectorStore) await this.setVector();
 
-        const results = await this.#vectorStore.similaritySearch(question, 1, filters);
-        return { status: true, data: results };
+        const results = await this.#vectorStore.similaritySearch(input, 1, filters);
+
+        return { status: true, data: results[0].pageContent };
     }
 
     async query(question: string, filters) {
