@@ -3,62 +3,49 @@ import { EmbeddingAPI } from '@aimpact/base-agent/embedding';
 import { functions } from './functions';
 
 export /*bundle*/ class AgentAPI {
-    #model = 'gpt-3.5-turbo-0613';
-    embedding = new EmbeddingAPI(0.2, 'es', this.#model);
+	#model = 'gpt-3.5-turbo-0613';
+	embedding = new EmbeddingAPI(0.2, 'es', this.#model);
 
-    #configuration = new Configuration({ apiKey: process.env.OPEN_AI_KEY });
-    #openai = new OpenAIApi(this.#configuration);
+	#configuration = new Configuration({ apiKey: process.env.OPEN_AI_KEY });
+	#openai = new OpenAIApi(this.#configuration);
 
-    async run(items: ChatCompletionRequestMessage[], prompt: string, filter: {}) {
-        const model = this.#model;
-        let messages: ChatCompletionRequestMessage[] = [{ role: 'system', content: prompt }];
-        messages = messages.concat(items);
+	async run(items: ChatCompletionRequestMessage[], prompt: string, filter: {}) {
+		const model = this.#model;
 
-        // console.log(' messages: ', messages);
-        // console.log(' prompt ', prompt);
-        // console.log(' filter ', filter);
+		let messages: ChatCompletionRequestMessage[] = [{ role: 'system', content: prompt }];
+		messages = messages.concat(items);
+		const { data } = await this.#openai.createChatCompletion({ model, messages, functions });
+		const {
+			usage,
+			choices: [{ message: response }],
+		} = data;
 
-        const { data } = await this.#openai.createChatCompletion({ model, messages, functions });
+		const { function_call } = response;
+		if (!function_call?.name) {
+			return { status: true, data: { usage, output: response.content } };
+		}
 
-        const {
-            usage,
-            choices: [{ message: response }],
-        } = data;
+		if (function_call?.name === 'get_knowledge_information') {
+			const { text } = JSON.parse(function_call.arguments);
+			const info = await this.embedding.search(text, filter);
 
-        // console.log('USAGE :', usage);
-        // console.log('RESPONSE :', response);
+			messages.push({
+				role: 'function',
+				name: function_call.name,
+				content: JSON.stringify({ info }),
+			});
 
-        const { function_call } = response;
-        // console.log('function_call?.name ', function_call?.name);
+			const { data } = await this.#openai.createChatCompletion({ model, messages });
+			const {
+				usage,
+				choices: [{ message: response }],
+			} = data;
 
-        if (!function_call?.name) {
-            return { status: true, data: { usage, output: response.content } };
-        }
+			return { status: true, data: { usage, output: response.content } };
+		}
 
-        if (function_call?.name === 'get_knowledge_information') {
-            const { text } = JSON.parse(function_call.arguments);
-            const info = await this.embedding.search(text, filter);
-
-            messages.push({
-                role: 'function',
-                name: function_call.name,
-                content: JSON.stringify({ info }),
-            });
-
-            const { data } = await this.#openai.createChatCompletion({ model, messages });
-            const {
-                usage,
-                choices: [{ message: response }],
-            } = data;
-
-            // console.log('USAGE on function:', usage);
-            // console.log('RESPONSE on function:', response, response.content);
-
-            return { status: true, data: { usage, output: response.content } };
-        }
-
-        if (function_call?.name === 'python') {
-            return { status: true, data: { usage, output: 'No tengo informacion para ayudarte' } };
-        }
-    }
+		if (function_call?.name === 'python') {
+			return { status: true, data: { usage, output: 'No tengo informacion para ayudarte' } };
+		}
+	}
 }
