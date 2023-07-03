@@ -3,7 +3,7 @@ import { EmbeddingAPI } from '@aimpact/base-agent/embedding';
 import { functions } from './functions';
 
 export /*bundle*/ class AgentAPI {
-	#model = 'gpt-3.5-turbo-0613';
+	#model = process.env.OPEN_AI_MODEL;
 	embedding = new EmbeddingAPI(0.2, 'es', this.#model);
 
 	#configuration = new Configuration({ apiKey: process.env.OPEN_AI_KEY });
