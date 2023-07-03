@@ -14,7 +14,7 @@ export /*bundle*/ class AgentAPI {
 
 		let messages: ChatCompletionRequestMessage[] = [{ role: 'system', content: prompt }];
 		messages = messages.concat(items);
-		const { data } = await this.#openai.createChatCompletion({ model, messages, functions });
+		const { data } = await this.#openai.createChatCompletion({ model, messages, functions, max_tokens: 256 });
 		const {
 			usage,
 			choices: [{ message: response }],

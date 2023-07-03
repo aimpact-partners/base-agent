@@ -50,8 +50,6 @@ export /*bundle*/ class EmbeddingsManager {
 		if (!this.#vectorStore) await this.setVector();
 
 		const results = await this.#vectorStore.similaritySearch(input, 1, filters);
-
-		console.log('results', results);
 		return { status: true, data: results[0]?.pageContent };
 	}
 
