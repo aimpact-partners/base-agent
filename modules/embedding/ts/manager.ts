@@ -18,12 +18,6 @@ export /*bundle*/ class EmbeddingsManager {
 	constructor(parent) {
 		this.#parent = parent;
 		this.#client = new PineconeClient();
-		// this.#model = new OpenAI({
-		//     openAIApiKey: process.env.OPEN_AI_KEY,
-		//     modelName: 'gpt-3.5-turbo',
-		//     temperature,
-		// });
-		// this.#embedding = new OpenAIEmbeddings({ openAIApiKey: process.env.OPEN_AI_KEY });
 	}
 
 	async setVector(metadata: {} = undefined) {
@@ -50,14 +44,11 @@ export /*bundle*/ class EmbeddingsManager {
 		if (!this.#vectorStore) await this.setVector();
 
 		const results = await this.#vectorStore.similaritySearch(input, 1, filters);
-
-		console.log('---', input, filters);
-		console.log('results', results);
 		return { status: true, data: results[0]?.pageContent };
 	}
 
-	async query(question: string, filters) {
-		if (!this.#vectorStore) await this.setVector();
+	async query(question: string, filter = undefined) {
+		if (!this.#vectorStore) await this.setVector(filter);
 
 		const chain = VectorDBQAChain.fromLLM(this.#parent.model, this.#vectorStore, {
 			k: 1,
@@ -68,8 +59,8 @@ export /*bundle*/ class EmbeddingsManager {
 		return { status: true, data: response.text };
 	}
 
-	async llm(model = undefined, metadata: {} = undefined) {
-		if (!this.#vectorStore) await this.setVector(metadata);
+	async llm(model = undefined, filter = undefined) {
+		if (!this.#vectorStore) await this.setVector(filter);
 
 		model = model ?? this.#parent.model;
 		return VectorDBQAChain.fromLLM(model, this.#vectorStore, {

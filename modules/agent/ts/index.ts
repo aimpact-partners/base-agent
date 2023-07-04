@@ -21,7 +21,6 @@ export /*bundle*/ class AgentAPI {
 		} = data;
 
 		const { function_call } = response;
-		console.log('function_call', function_call);
 		if (!function_call?.name) {
 			return { status: true, data: { usage, output: response.content } };
 		}

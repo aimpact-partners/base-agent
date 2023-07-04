@@ -1,4 +1,4 @@
-import {execute} from './routes/agent';
+import { execute } from './routes/agent';
 
 export /*bundle*/
 function routes(app) {
