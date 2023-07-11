@@ -23,10 +23,11 @@ export /*bundle*/ class AgentAPI {
 	#configuration = new Configuration({ apiKey: process.env.OPEN_AI_KEY });
 	#openai = new OpenAIApi(this.#configuration);
 
-	async run(items: ChatCompletionRequestMessage[], prompt: string, filter: {}) {
+	async run(items: ChatCompletionRequestMessage[], system: string, filter: {}) {
 		const model = this.#model;
 
-		let messages: ChatCompletionRequestMessage[] = [{ role: 'system', content: prompt }];
+		let messages: ChatCompletionRequestMessage[] = [];
+		system && (messages = messages.concat([{ role: 'system', content: system }]));
 		messages = messages.concat(items);
 		const { data } = await this.#openai.createChatCompletion({ model, messages, functions, max_tokens: 256 });
 		const {
