@@ -1,6 +1,6 @@
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from 'openai';
-import { EmbeddingAPI } from '@aimpact/base-agent/embedding';
 import { functions } from './functions';
+import { Embedding } from '../embedding';
 
 interface IUsageSpecs {
 	completion_tokens: number;
@@ -8,20 +8,19 @@ interface IUsageSpecs {
 	total_tokens: number;
 }
 
-const usageProps = (usage: IUsageSpecs) => {
-	return {
-		completionTokens: usage.completion_tokens,
-		promptTokens: usage.prompt_tokens,
-		totalTokens: usage.total_tokens,
-	};
-};
-
-export /*bundle*/ class AgentAPI {
+export /*bundle*/ class Agent {
 	#model = process.env.OPEN_AI_MODEL;
-	embedding = new EmbeddingAPI(0.2, 'es', this.#model);
-
+	embedding = new Embedding(0.2, 'es', this.#model);
 	#configuration = new Configuration({ apiKey: process.env.OPEN_AI_KEY });
 	#openai = new OpenAIApi(this.#configuration);
+
+	usageProps = (usage: IUsageSpecs) => {
+		return {
+			completionTokens: usage.completion_tokens,
+			promptTokens: usage.prompt_tokens,
+			totalTokens: usage.total_tokens,
+		};
+	};
 
 	async run(items: ChatCompletionRequestMessage[], system: string, filter: {}) {
 		const model = this.#model;
@@ -37,7 +36,7 @@ export /*bundle*/ class AgentAPI {
 
 		const { function_call } = response;
 		if (!function_call?.name) {
-			return { status: true, data: { usage: usageProps(usage), output: response.content } };
+			return { status: true, data: { usage: this.usageProps(usage), output: response.content } };
 		}
 
 		if (function_call?.name === 'get_knowledge_information') {
@@ -56,11 +55,14 @@ export /*bundle*/ class AgentAPI {
 				choices: [{ message: response }],
 			} = data;
 
-			return { status: true, data: { usage: usageProps(usage), output: response.content } };
+			return { status: true, data: { usage: this.usageProps(usage), output: response.content } };
 		}
 
 		if (function_call?.name === 'python') {
-			return { status: true, data: { usage: usageProps(usage), output: 'No tengo informacion para ayudarte' } };
+			return {
+				status: true,
+				data: { usage: this.usageProps(usage), output: 'No tengo informacion para ayudarte' },
+			};
 		}
 	}
 }
