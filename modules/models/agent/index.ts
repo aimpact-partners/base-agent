@@ -1,6 +1,8 @@
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from 'openai';
 import { functions } from './functions';
-import { Embedding } from '../embedding';
+import { call } from './api-call';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 interface IUsageSpecs {
 	completion_tokens: number;
@@ -9,8 +11,6 @@ interface IUsageSpecs {
 }
 
 export /*bundle*/ class Agent {
-	#model = process.env.OPEN_AI_MODEL;
-	embedding = new Embedding(0.2, 'es', this.#model);
 	#configuration = new Configuration({ apiKey: process.env.OPEN_AI_KEY });
 	#openai = new OpenAIApi(this.#configuration);
 
@@ -23,11 +23,12 @@ export /*bundle*/ class Agent {
 	};
 
 	async run(items: ChatCompletionRequestMessage[], system: string, filter: {}) {
-		const model = this.#model;
+		const model = process.env.OPEN_AI_MODEL;
 
 		let messages: ChatCompletionRequestMessage[] = [];
 		system && (messages = messages.concat([{ role: 'system', content: system }]));
 		messages = messages.concat(items);
+
 		const { data } = await this.#openai.createChatCompletion({ model, messages, functions, max_tokens: 256 });
 		const {
 			usage,
@@ -41,12 +42,15 @@ export /*bundle*/ class Agent {
 
 		if (function_call?.name === 'get_knowledge_information') {
 			const { text } = JSON.parse(function_call.arguments);
-			const info = await this.embedding.search(text, filter);
+			const responseSearch = await call({ text, filter });
+			if (!responseSearch.status) {
+				return responseSearch;
+			}
 
 			messages.push({
 				role: 'function',
 				name: function_call.name,
-				content: JSON.stringify({ info }),
+				content: JSON.stringify({ info: responseSearch.data }),
 			});
 
 			const { data } = await this.#openai.createChatCompletion({ model, messages });

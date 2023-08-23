@@ -1,4 +1,4 @@
-import { agent } from '@aimpact/base-agent/api';
+import { agent } from './agent';
 
 export /*bundle*/
 function routes(app) {

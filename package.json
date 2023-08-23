@@ -1,6 +1,6 @@
 {
 	"name": "@aimpact/base-agent",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"title": "Base Agents package",
 	"description": "Package to handle langchain base agent",
 	"license": "ISC",
@@ -16,17 +16,50 @@
 	"modules": {
 		"path": "modules"
 	},
+	"params": {
+		"local": {
+			"chatAPI": "http://localhost:5040"
+		},
+		"development": {
+			"chatAPI": "https://chat-api-http-rb5caohzgq-uc.a.run.app"
+		},
+		"testing": {
+			"chatAPI": "https://chat-api-http-rb5caohzgq-uc.a.run.app"
+		}
+	},
 	"deployment": {
 		"distributions": [
 			{
-				"name": "node",
-				"environment": "development",
+				"name": "node-local",
+				"environment": "local",
 				"platform": "node",
 				"maps": "external",
 				"ports": {
 					"bundles": 3080,
 					"inspect": 3081,
 					"http": 3082
+				}
+			},
+			{
+				"name": "node",
+				"environment": "development",
+				"platform": "node",
+				"maps": "external",
+				"ports": {
+					"bundles": 3083,
+					"inspect": 3084,
+					"http": 3085
+				}
+			},
+			{
+				"name": "node-testing",
+				"environment": "testing",
+				"platform": "node",
+				"maps": "external",
+				"ports": {
+					"bundles": 3086,
+					"inspect": 3087,
+					"http": 3088
 				}
 			}
 		]
