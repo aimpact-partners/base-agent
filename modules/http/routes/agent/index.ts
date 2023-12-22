@@ -1,30 +1,59 @@
-import { Agent } from '@aimpact/base-agent/models';
-const model = new Agent();
+import type { Application, Request, Response } from 'express';
+import { BaseAgent } from '@aimpact/base-agent/agent';
+import * as dotenv from 'dotenv';
 
-export /*bundle*/ const agent = async (req, res) => {
-	const { prompt, messages, filter, token } = req.body;
+dotenv.config();
 
-	if (token !== process.env.GCLOUD_INVOKER) {
-		return res.status(400).send({ status: false, error: 'Token request not valid' });
+const { AGENT_TOKEN } = process.env;
+
+export class AgentRoutes {
+	static setup(app: Application) {
+		app.post('/agent/messages', this.sendMessage);
 	}
-	if (!messages) {
-		return res.status(400).send({ status: false, error: 'No data to process' });
-	}
 
-	try {
-		const response = await model.run(messages, prompt, filter);
-		if (!response.status) {
-			return res.json({
-				status: false,
-				error: `Error processing: ${response.error}`,
-			});
+	static async sendMessage(req: Request, res: Response) {
+		const authHeader = req.headers['authorization'];
+		const accessToken = authHeader && authHeader.split(' ')[1];
+		if (!accessToken) return res.status(401).json({ error: 'Access token not provided' });
+		if (accessToken !== AGENT_TOKEN) {
+			return res.status(401).json({ error: 'Access is not allowed. Invalid credentials.' });
 		}
-		return res.json(response);
-	} catch (error) {
-		console.error(error);
-		res.json({
-			status: false,
-			error: error.message,
-		});
+
+		res.setHeader('Access-Control-Allow-Origin', '*');
+
+		if (!req.body) return res.status(400).json({ error: 'Parameters is not an object' });
+
+		const { metadata, chatId, project, synthesis, messages, user, prompt, language } = req.body;
+		if (typeof metadata !== 'object') return res.status(400).json({ error: 'Metadata is not an object' });
+		if (!chatId) return res.status(400).json({ error: 'chatId must be a specified' });
+		if (typeof chatId !== 'string') return res.status(400).json({ error: 'chatId must be a string' });
+		if (!project) return res.status(400).json({ error: 'project must be a specified' });
+		if (typeof project !== 'string') return res.status(400).json({ error: 'project must be a string' });
+		if (synthesis && typeof synthesis !== 'string')
+			return res.status(400).json({ error: 'Synthesis must be a string' });
+		if (messages && typeof messages !== 'object')
+			return res.status(400).json({ error: 'Messages parameter must be an object' });
+		if (messages?.last && !(messages.last instanceof Array))
+			return res.status(400).json({ error: 'Last messages parameter must be an array' });
+		if (typeof user !== 'object' || !user.name)
+			return res.status(400).json({ error: 'User parameter must be specified' });
+		if (typeof prompt !== 'string') return res.status(400).json({ error: 'Prompt parameter must be specified' });
+		if (typeof language !== 'string')
+			return res.status(400).json({ error: 'Language parameter must be specified' });
+		if (!['es', 'en', 'pt', 'fr', 'it', 'de'].includes(language))
+			return res.status(400).json({ error: `Language "${language}" is not supported` });
+
+		const specs = { chatId, project, language, metadata, synthesis, messages, user, prompt };
+		const agent = new BaseAgent();
+		const iterator = agent.sendMessage(specs);
+
+		res.setHeader('Content-Type', 'text/plain');
+		res.setHeader('Transfer-Encoding', 'chunked');
+
+		for await (const { chunk } of iterator) {
+			res.write(chunk);
+		}
+
+		res.end();
 	}
-};
+}

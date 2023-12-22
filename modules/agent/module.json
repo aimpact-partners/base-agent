@@ -1,0 +1,6 @@
+{
+	"name": "agent",
+	"platforms": ["node"],
+	"bundle": "ts",
+	"files": "*"
+}

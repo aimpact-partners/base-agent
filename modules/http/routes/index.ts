@@ -1,7 +1,10 @@
-import { agent } from './agent';
+import type { Application, Request, Response } from 'express';
+import { AgentRoutes } from './agent';
 
-export /*bundle*/
-function routes(app) {
-	app.get('/', (req, res) => res.send('@aimpact/base-agent http server'));
-	app.post('/agent', agent);
+export /*bundle*/ class Routes {
+	static setup(app: Application) {
+		app.get('/', (req: Request, res: Response) => res.send('AImpact Base Agents http server'));
+
+		AgentRoutes.setup(app);
+	}
 }

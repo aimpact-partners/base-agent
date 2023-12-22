@@ -1,15 +1,13 @@
 import * as express from 'express';
 import { Connections } from './connections';
-import { routes, hmr } from '@aimpact/base-agent/routes';
-import * as dotenv from 'dotenv';
-dotenv.config();
+import { Routes, hmr } from '@aimpact/base-agent/routes';
 
 export class Server {
-	#app;
-	#router;
 	#instance;
 	#connections;
+	#app;
 	#port = process.env.PORT || 5010;
+	#router;
 
 	constructor() {
 		this.#start();
@@ -21,12 +19,14 @@ export class Server {
 			this.#app.use(express.json());
 			this.#setHeader();
 			this.#router = express.Router();
-			routes(this.#app);
+			Routes.setup(this.#app);
+
 			//subscription to listen routes module changes.
 			hmr.on('change', this.onChange);
 			this.#instance = this.#app.listen(this.#port, () =>
 				console.log(`HTTP Server listening on port "${this.#port}"`)
 			);
+
 			this.#connections = new Connections(this.#instance);
 		} catch (exc) {
 			console.error('Error', exc);
